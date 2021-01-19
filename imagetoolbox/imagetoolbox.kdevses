@@ -1,0 +1,33 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<!DOCTYPE KDevPrjSession>
+<KDevPrjSession>
+ <DocsAndViews NumberOfDocuments="3" >
+  <Doc0 NumberOfViews="1" URL="file:/home/mike/progs/ATLASIV/imagetoolbox/src/ImageFunctions.h" >
+   <View0 line="40" Type="Source" />
+  </Doc0>
+  <Doc1 NumberOfViews="1" URL="file:/home/mike/progs/ATLASIV/imagetoolbox/src/main.cpp" >
+   <View0 line="37" Type="Source" />
+  </Doc1>
+  <Doc2 NumberOfViews="1" URL="file:/home/mike/progs/ATLASIV/imagetoolbox/src/ImageFunctions.cpp" >
+   <View0 line="10" Type="Source" />
+  </Doc2>
+ </DocsAndViews>
+ <pluginList>
+  <kdevbookmarks>
+   <bookmarks>
+    <bookmark url="/home/mike/progs/ATLASIV/imagetoolbox/src/ImageFunctions.h" >
+     <mark line="20" />
+    </bookmark>
+   </bookmarks>
+  </kdevbookmarks>
+  <kdevvalgrind>
+   <executable path="" params="" />
+   <valgrind path="" params="" />
+   <calltree path="" params="" />
+   <kcachegrind path="" />
+  </kdevvalgrind>
+  <kdevdebugger>
+   <breakpointList/>
+  </kdevdebugger>
+ </pluginList>
+</KDevPrjSession>

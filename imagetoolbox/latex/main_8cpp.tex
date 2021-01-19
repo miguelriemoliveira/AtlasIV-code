@@ -1,0 +1,82 @@
+\section{/home/mike/progs/ATLASIV/imagetoolbox/src/main.cpp File Reference}
+\label{main_8cpp}\index{/home/mike/progs/ATLASIV/imagetoolbox/src/main.cpp@{/home/mike/progs/ATLASIV/imagetoolbox/src/main.cpp}}
+{\tt \#include $<$stdio.h$>$}\par
+{\tt \#include $<$stdlib.h$>$}\par
+{\tt \#include $<$cv.h$>$}\par
+{\tt \#include $<$highgui.h$>$}\par
+{\tt \#include $<$mycameraclass\_\-v1394.h$>$}\par
+{\tt \#include $<$Image\-Functions.h$>$}\par
+\subsection*{Functions}
+\begin{CompactItemize}
+\item 
+int {\bf main} (int argc, char $\ast$argv[$\,$])
+\end{CompactItemize}
+
+
+\subsection{Function Documentation}
+\index{main.cpp@{main.cpp}!main@{main}}
+\index{main@{main}!main.cpp@{main.cpp}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}int main (int {\em argc}, char $\ast$ {\em argv}[$\,$])}\label{main_8cpp_a0}
+
+
+Definition at line 41 of file main.cpp.
+
+References Class\-Image\-Functions::IF\_\-Threshold(), and Class\-Image\-Functions::Set\-Max\-Limit().
+
+\footnotesize\begin{verbatim}42 {
+43   char name0[]="MyImages/example1.jpg";
+44   IplImage *image=NULL, *ThreshImage=NULL;
+45   unsigned int a=128;
+46   CvSize ImgSize;
+47   
+48   
+49   mycameraclass_v1394 *NavCam;
+50   
+51   NavCam = new mycameraclass_v1394(0);
+52   
+53   image = cvCreateImage(cvSize(320,240),IPL_DEPTH_8U,3);
+54   
+55   
+56   
+57   printf("Hello, world!\n");
+58 
+59   ClassImageFunctions ImageFunctions; //create class object
+60   
+61   ClassImageFunctions &IF=ImageFunctions; //create reference
+62   
+63   IF.SetMaxLimit(255); //call class procedure
+64   
+65   while(1)
+66   {
+67  *image = NavCam->myGetImageColor();
+68  // image = cvLoadImage(name0,-1);
+69   
+70   ImgSize.width = image->width;
+71   ImgSize.height = image->height;
+72   
+73   ThreshImage=cvCreateImage(ImgSize,image->depth,1);
+74   
+75   cvCvtPixToPlane(image,ThreshImage,NULL,NULL,NULL);
+76   
+77   
+78   IF.IF_Threshold(ThreshImage,ThreshImage,a);
+79   
+80   
+81   cvWaitKey(10);
+82   
+83   cvNamedWindow("Imagem Inicial",1);
+84   cvShowImage("Imagem Inicial",image);
+85   cvNamedWindow("Imagem Final",1);
+86   cvShowImage("Imagem Final",ThreshImage);
+87   }
+88   
+89 
+90   
+91   
+92   
+93   
+94   return EXIT_SUCCESS;
+95 }
+\end{verbatim}\normalsize 
+
+

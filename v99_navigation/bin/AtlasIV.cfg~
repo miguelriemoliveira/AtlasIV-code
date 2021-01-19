@@ -1,0 +1,129 @@
+	//______________________________________________________________
+//TITLE: ROBOT navegation cfg file______________________________
+//______________________________________________________________
+//AUTHORS: Miguel Oliveira, Miguel Neta, Rui Cancela ___________
+//______________________________________________________________
+//PROJECT LEADER: Prof. Vitor Santos____________________________
+//______________________________________________________________
+//______________________________________________________________
+//PURPOSE: Program parameters are declared here_________________
+//______________________________________________________________
+//FILENAME: Atlas.cfg___________________________________________
+//______________________________________________________________
+//Other:Content by lines: token ID separated by "white" space___
+//from its value. Anything after a '#' is considered a comment__
+//______________________________________________________________
+/*! @file Atlas.cfg
+* @brief This file is read when the program starts. Most program parameters are here defined.
+*/
+
+//__________________________________
+//_______ Motion Parameters ________
+//__________________________________
+NORMALSPEED 4	//Speed when without constraints
+CROSSAPROACHSPEED 2	//Speed when cross is in view
+STOPPEDSPEED 1		//Speed when stopped
+TUNNELSPEED 3		//Speed when in the tunnel
+CONSTRUCTIONSPEED 3	//Speed when in construction
+BACKWARDSSPEED 0	//Speed when moving backwards
+DANGERSPEED 3
+TURBOADDSPEED 2
+//__________________________________
+//__________ Communications ________
+//__________________________________
+MAXNOATTEMPTSTOSEND 3		//maximum number of atempts
+TIMETOWAITFORNEXTATEMPT 1	//time to wait to make a new atempt (milisecs)
+
+//__________________________________
+//_______ Calculation Assuptions ___
+//__________________________________
+//THRESHOLD_LIMIT 1		//threshold limit [0 to 255]
+HORIZON 110			//Horizon definition
+CONSTHORIZON 80			//Const Horizon definition
+MINIMUMLINEWIDTH 3 		//Used by AF_SelectHorizon2
+COLSTOFINDABLACKPIX 30		//Used by FindPixelsLFO (check before changing)
+LINETOSTARTLOWSEARCH 190 //238	//Used by FindPixelsLFO (check before changing)
+LINETOSTARTTOPSEARCH 30		//Used by FindPixelsLFO. Adds Horizon automaticaly (check before changing)
+
+//__________________________________
+//__________ Calibration values ____
+//__________________________________
+ANGLEATSTRAIGHTLEFTLINE 40 //57.9 	//used by GetGoToPoint in auxiliaryfunc.c
+ANGLEATSTRAIGHTRIGHTLINE -37 //-60.6 	//used by GetGoToPoint in auxiliaryfunc.c
+ROBOTWIDTHFACTORTOROADWITH 0.4 //0.66666		//Used by LineSteping
+
+//__________________________________
+//__________ Timeouts ______________
+//__________________________________
+TIMETOWAITAFTERLASTCROSS 3000 	//time to wait on CrossAproachspeed until switching to normal
+TIMETOWAITAFTERLASTTUNNEL 200 	//time to wait on tunnel mode before changing to normal
+TIMETOWAITINSTOPMODE 7000 	//time to wait on stop mode trying to get a lights analisys correct (needs to be bigger than TimeToWaitAfterLastCross)
+
+
+//__________________________________
+//__________ ReadLights  ___________
+//__________________________________
+SATURATIONLIMIT 90	
+INTENSITYLIMIT 190
+REDFILTERUPPERLIMIT 120
+REDFILTERLOWERLIMIT 110
+GREENFILTERUPPERLIMIT 50
+GREENFILTERLOWERLIMIT 0
+YELLOWFILTERUPPERLIMIT 100
+YELLOWFILTERLOWERLIMIT 75
+FRACTIONLIMITTODECIDEYELLOW 0.1
+MINIMUMCOUNTVALUE 30
+MAXIMUMOCUPATIONPERCENT 0.95
+OBJECTUPMAXANGLE 300
+OBJECTUPMINANGLE 240
+OBJECTLEFTMAXANGLE 210
+OBJECTLEFTMINANGLE 150
+OBJECTRIGHTMAXANGLE 30
+OBJECTRIGHTMINANGLE 330
+
+
+//__________________________________
+//__________ FindCross  ____________
+//__________________________________
+MINIMUMCROSSSIZE 300 //Minimum cross possible size
+TIMETOSTARTLOOKINGFORCROSS 6000
+TIMESTOANALISESPOTFORCROSS 7
+
+//__________________________________
+//__________ Tunnel ________________
+//__________________________________
+MAXDISTTOBETUNNEL 12	  //maximum distance to be a tunnel (14 corresponds to 60 cm (excel table))
+
+//__________________________________
+//__________ Contruction ___________
+//__________________________________
+CONSTSATURATIONLIMIT 180
+CONSTINTENSITYLIMIT 220
+CONSTLOWORANGELIMIT 90
+CONSTTOPORANGELIMIT 120
+
+
+PIXELSTOGOTOCONSTMODE 4000
+PIXELSTOEXITCONSTMODE 1500
+//__________________________________
+//__________ Parking _______________
+//__________________________________
+PAMT1 2400
+PAMD1 45
+
+PAMT2 6000 //has to be zero ZERO
+PAMD2 0
+PAMT3 500
+PAMD3 45
+
+PAMT2A 1900
+PAMD2A 45
+PAMT3A 6000
+PAMD3A 0
+
+//__________________________________
+//__________ Escape_______________
+//__________________________________
+TIMETOHOLDINESCAPEMANOUVER 200
+MINANGLETOENTERESCAPEMANOUVER 30
+MAXANGLETOENTERESCAPEMANOUVER 70

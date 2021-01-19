@@ -1,0 +1,66 @@
+#!/bin/csh -f
+
+set org = $1
+set new = $2
+if ($1 == "") then
+	echo 'No source version number.'
+	exit
+endif
+if ($2 == "") then
+	echo 'No new version number.'
+	exit
+endif
+
+echo   $org "" $new
+
+set orgname=v${org}_navigation
+set newname=v${new}_navigation
+test -d $orgname #status must be 0
+if ($status == 1) then
+	echo "Source version dir does not exist."
+	exit
+endif
+
+test -d $newname #status must be 1
+if ($status == 0) then
+	echo "New version dir already exists."
+	exit
+endif
+
+echo "Creating" $newname "from" $orgname
+cp -rp $orgname $newname
+
+
+cd $newname
+set custompath = `pwd`
+echo "Entering" $custompath
+
+foreach f ( .kdevelop .kdevses .pro .kdevelop.pcs)
+	echo "Changing file name: " ${orgname}$f "to" ${newname}$f
+	mv $orgname$f $newname$f
+end
+
+rm -f Makefile src/Makefile
+
+set rep = "s/v"$org"/v"$new"/g"
+echo "Replacing v"$org "with v"$new"." 
+
+foreach f ( $newname.kdevelop $newname.kdevses $newname.pro src/src.pro)
+	cat $f | sed $rep > temp
+	mv temp $f
+end
+set rep = "s/V"$org"/V"$new"/g"
+echo "Replacing V"$org "with V"$new"." 
+
+foreach f ( $newname.kdevelop $newname.kdevses $newname.pro src/src.pro)
+	cat $f | sed $rep > temp
+	mv temp $f
+end
+
+
+echo "Removing executable" $orgname"."
+rm -f "./bin/"$orgname
+
+echo "Launching kdevelop with new version."
+
+kdevelop $newname.kdevelop&

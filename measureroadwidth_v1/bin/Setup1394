@@ -1,0 +1,13 @@
+#Shell script to give user permissions to use video device & probe the required modules
+#you must run this script after you logged as root
+#Miguel Oliveira, 28 March 2006
+
+
+printf "Setting up 1394 modules..."
+modprobe ieee1394
+modprobe ohci1394
+modprobe raw1394
+modprobe video1394
+printf "Done.\n"
+
+chmod 777 /dev/*

@@ -1,0 +1,11 @@
+#!
+#Shell script to set the path so that intel IPP is used (im gona try to insert this in the .rc)
+#This info was taken from /opt/intel/ipp/docs/gettingstarted.html
+#Miguel Oliveira, 28 March.
+
+
+printf "Setting up IPP lib path (to know more read /opt/intel/ipp/docs/gettingstarted.html)..."
+
+export LD_LIBRARY_PATH=/opt/intel/ipp/5.0/ia32/sharedlib:$LD_LIBRARY_PATH 
+
+printf "  Done.\n"

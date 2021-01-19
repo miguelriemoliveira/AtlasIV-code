@@ -1,0 +1,34 @@
+#!/bin/csh -f
+
+set ver = $1
+
+if ($1 == "") then
+	echo 'No version number.'
+	exit
+endif
+
+set mypath = "v"$ver"_navigation/imgtemplates/"
+echo "Entering "$mypath"."
+echo   "Opening image sources for templates from version" $ver"."
+
+
+set sn1 = "Souce_"  
+set sn2 = "_Template.jpg"
+
+cd $mypath
+pwd
+
+#gimp "Source_YAL_Template.jpg"
+
+set files = $sn1"YAL"$sn2 
+echo $files
+gimp files 
+# " $mypath$sn1"YAL"$sn2 " " $mypath$sn1"YAR"$sn2 " " $mypath$sn1"RC"$sn2 
+
+# set name1 = ""
+# foreach f ( $sn1"GAU"$sn2 $sn1"YAL"$sn2 $sn1"YAR"$sn2 $sn1"RC"$sn2)
+# 	echo $f
+# 	set name1 = $f
+# end
+# 
+# echo "name is" $name1

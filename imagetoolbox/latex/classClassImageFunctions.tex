@@ -1,0 +1,147 @@
+\section{Class\-Image\-Functions Class Reference}
+\label{classClassImageFunctions}\index{ClassImageFunctions@{ClassImageFunctions}}
+{\tt \#include $<$Image\-Functions.h$>$}
+
+\subsection*{Public Member Functions}
+\begin{CompactItemize}
+\item 
+{\bf Class\-Image\-Functions} ()
+\item 
+{\bf $\sim$Class\-Image\-Functions} ()
+\item 
+char {\bf IF\_\-Threshold} (Ipl\-Image $\ast$src, Ipl\-Image $\ast$dst, unsigned char Limit)
+\item 
+char {\bf IF\_\-Threshold} (Ipl\-Image $\ast$src, Ipl\-Image $\ast$dst, unsigned int Limit)
+\item 
+char {\bf Set\-Max\-Limit} (int val)
+\end{CompactItemize}
+\subsection*{Private Attributes}
+\begin{CompactItemize}
+\item 
+unsigned char {\bf Max\-Limit}
+\end{CompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\index{ClassImageFunctions@{Class\-Image\-Functions}!ClassImageFunctions@{ClassImageFunctions}}
+\index{ClassImageFunctions@{ClassImageFunctions}!ClassImageFunctions@{Class\-Image\-Functions}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}Class\-Image\-Functions::Class\-Image\-Functions ()}\label{classClassImageFunctions_ClassImageFunctionsa0}
+
+
+This is the constructor \begin{Desc}
+\item[Returns:]\end{Desc}
+Definition at line 25 of file Image\-Functions.cpp.
+
+References Max\-Limit.
+
+\footnotesize\begin{verbatim}26 {
+27         MaxLimit = 255;
+28 }
+\end{verbatim}\normalsize 
+
+
+\index{ClassImageFunctions@{Class\-Image\-Functions}!~ClassImageFunctions@{$\sim$ClassImageFunctions}}
+\index{~ClassImageFunctions@{$\sim$ClassImageFunctions}!ClassImageFunctions@{Class\-Image\-Functions}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}Class\-Image\-Functions::$\sim${\bf Class\-Image\-Functions} ()\hspace{0.3cm}{\tt  [inline]}}\label{classClassImageFunctions_ClassImageFunctionsa1}
+
+
+Definition at line 38 of file Image\-Functions.h.
+
+\footnotesize\begin{verbatim}38 {}; 
+\end{verbatim}\normalsize 
+
+
+
+
+\subsection{Member Function Documentation}
+\index{ClassImageFunctions@{Class\-Image\-Functions}!IF_Threshold@{IF\_\-Threshold}}
+\index{IF_Threshold@{IF\_\-Threshold}!ClassImageFunctions@{Class\-Image\-Functions}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}char Class\-Image\-Functions::IF\_\-Threshold (Ipl\-Image $\ast$ {\em src}, Ipl\-Image $\ast$ {\em dst}, unsigned int {\em Limit})}\label{classClassImageFunctions_ClassImageFunctionsa3}
+
+
+Definition at line 38 of file Image\-Functions.cpp.
+
+References IF\_\-Threshold().
+
+\footnotesize\begin{verbatim}39 {
+40         return IF_Threshold(src,dst,(unsigned char) Limit);
+41 };
+\end{verbatim}\normalsize 
+
+
+\index{ClassImageFunctions@{Class\-Image\-Functions}!IF_Threshold@{IF\_\-Threshold}}
+\index{IF_Threshold@{IF\_\-Threshold}!ClassImageFunctions@{Class\-Image\-Functions}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}char Class\-Image\-Functions::IF\_\-Threshold (Ipl\-Image $\ast$ {\em src}, Ipl\-Image $\ast$ {\em dst}, unsigned char {\em Limit})}\label{classClassImageFunctions_ClassImageFunctionsa2}
+
+
+This funtion threshold src image and gives the result in dst image \begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em src}]-$>$source image \item[{\em dst}]-$>$destination image \item[{\em Limit}]-$>$threshol limit \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]\end{Desc}
+Definition at line 30 of file Image\-Functions.cpp.
+
+References Max\-Limit.
+
+Referenced by IF\_\-Threshold(), and main().
+
+\footnotesize\begin{verbatim}31 {
+32         if(! src || ! dst ) return -1;
+33         cvThreshold(src,dst,Limit,MaxLimit,CV_THRESH_BINARY);
+34         return 1;
+35 }       
+\end{verbatim}\normalsize 
+
+
+\index{ClassImageFunctions@{Class\-Image\-Functions}!SetMaxLimit@{SetMaxLimit}}
+\index{SetMaxLimit@{SetMaxLimit}!ClassImageFunctions@{Class\-Image\-Functions}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}char Class\-Image\-Functions::Set\-Max\-Limit (int {\em val})}\label{classClassImageFunctions_ClassImageFunctionsa4}
+
+
+ola gosto muito de ti \begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em val}]\end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]\end{Desc}
+Definition at line 44 of file Image\-Functions.cpp.
+
+References Max\-Limit.
+
+Referenced by main().
+
+\footnotesize\begin{verbatim}45 {
+46 
+47         if(val >=0 && val<256)
+48         {       
+49                 MaxLimit = val;
+50                 return 1;
+51         }
+52         else
+53         {       
+54                 return -1;
+55         }
+56 
+57 }
+\end{verbatim}\normalsize 
+
+
+
+
+\subsection{Member Data Documentation}
+\index{ClassImageFunctions@{Class\-Image\-Functions}!MaxLimit@{MaxLimit}}
+\index{MaxLimit@{MaxLimit}!ClassImageFunctions@{Class\-Image\-Functions}}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}unsigned char {\bf Class\-Image\-Functions::Max\-Limit}\hspace{0.3cm}{\tt  [private]}}\label{classClassImageFunctions_ClassImageFunctionsr0}
+
+
+Definition at line 63 of file Image\-Functions.h.
+
+Referenced by Class\-Image\-Functions(), IF\_\-Threshold(), and Set\-Max\-Limit().
+
+The documentation for this class was generated from the following files:\begin{CompactItemize}
+\item 
+/home/mike/progs/ATLASIV/imagetoolbox/src/{\bf Image\-Functions.h}\item 
+/home/mike/progs/ATLASIV/imagetoolbox/src/{\bf Image\-Functions.cpp}\end{CompactItemize}

@@ -1,0 +1,340 @@
+/***************************************************************/
+/**TITLE: ROBOT navegation main src file************************/
+/***************************************************************/
+/**AUTHORS: Miguel Oliveira, Miguel Neta, Rui Cancela ***********/
+/***************************************************************/
+/**PROJECT LEADER: Prof. Vitor Santos****************************/
+/***************************************************************/
+/***************************************************************/
+/**PURPOSE: To control ROBOT navegation in the road designed for 
+the Robotica 2005 Festival*************************************/
+/***************************************************************/
+/**FILENAME: main.cpp********************************************/
+/***************************************************************/
+/*! @file main.cpp
+* @brief Program main.
+*/
+
+#ifndef _MAIN_FILE_
+#define _MAIN_FILE_
+
+#include "header.h"
+
+int GlobalPos=0;
+int line=33;
+int col=142;
+int w=60;
+int h=50;
+int tem;
+int side=0;
+/**
+ * 
+ * @param argc 
+ * @param argv 
+ * @return 
+ */
+ 
+void IntensityLevel(int pos)
+{
+  INTENSITYLIMIT= pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+ 
+void ChangeSide(int pos)
+{
+  side= pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+void SaturationLevel(int pos)
+{
+  SATURATIONLIMIT= pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+void ChangeLine(int pos)
+{
+  line = pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+
+void ChangeCol(int pos)
+{
+  col = pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+void ChangeH(int pos)
+{
+  h = pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+void ChangeW(int pos)
+{
+  w = pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+void ChangeTemplate(int pos)
+{
+  tem = pos; //atribui o valor da slide bar
+//   cvWaitKey(0);
+  
+}; 
+
+
+int main(int argc, char** argv)
+{
+IN_InitEverything(0/*time to show logo (0 not to show)*/); //Every initialization needed is done here
+
+Mode.Direction=TAKERIGHT;
+Mode.Mode=STOPMODE;
+Mode.PreviousMode=DUMMYMODE;
+cout << "olaolaolaola" << endl;
+RobotStatus.LapNumber=0;
+cvNamedWindow("Sliders",1);
+cvCreateTrackbar("Intensity","Sliders",&GlobalPos ,255,IntensityLevel);
+cvSetTrackbarPos("Intensity","Sliders",(int)INTENSITYLIMIT);
+
+cvCreateTrackbar("Saturation","Sliders",&GlobalPos ,255,SaturationLevel);
+cvSetTrackbarPos("Saturation","Sliders",(int)SATURATIONLIMIT);
+
+cvCreateTrackbar("line","Sliders",&GlobalPos ,239,ChangeLine);
+cvSetTrackbarPos("line","Sliders",line);
+
+
+cvCreateTrackbar("col","Sliders",&GlobalPos ,319,ChangeCol);
+cvSetTrackbarPos("col","Sliders",col);
+
+cvCreateTrackbar("col","Sliders",&GlobalPos ,319,ChangeCol);
+cvSetTrackbarPos("col","Sliders",col);
+
+cvCreateTrackbar("h","Sliders",&GlobalPos ,319,ChangeH);
+cvSetTrackbarPos("h","Sliders",h);
+
+cvCreateTrackbar("w","Sliders",&GlobalPos ,319,ChangeW);
+cvSetTrackbarPos("w","Sliders",w);
+
+cvCreateTrackbar("tem","Sliders",&GlobalPos ,3,ChangeTemplate);
+cvSetTrackbarPos("tem","Sliders",tem);
+
+cvCreateTrackbar("side","Sliders",&GlobalPos ,1,ChangeSide);
+cvSetTrackbarPos("side","Sliders",side);
+
+
+//TOTALLAPS=3;
+while(1)	//infinite main cicle (its breaked out of error or the end of run)
+{
+	
+	TM_UpdateTick(&Time.Tick.LastIteration);
+	
+	
+	if (RobotStatus.LapNumber==0)
+		Mode.Direction=TAKERIGHT;
+	else if(RobotStatus.LapNumber==1)		
+		Mode.Direction=TAKELEFT;
+	else if(RobotStatus.LapNumber==2)		
+		Mode.Direction=TAKERIGHT;
+	else if(RobotStatus.LapNumber==3)
+		Mode.Direction=TAKELEFT;
+	else if(RobotStatus.LapNumber==4)
+		Mode.Direction=TAKERIGHT;
+	
+	
+	
+		
+		
+//  	AF_GetNavImage();		
+  	AF_GetLightsImage();
+	
+	
+		
+	
+	RL_ApplyFilter_1(2/*2=Intensityfilter*/);
+	RL_ApplyFilter_1(1/*2=Intensityfilter*/);
+	
+	
+	
+	IplImage *TemplateCreation = cvCreateImage(cvSize(320,240),IPL_DEPTH_8U ,1);
+	cvCopy(GI.Lights.V_Filter,TemplateCreation);
+	cvRectangle( TemplateCreation , cvPoint(col,line), cvPoint(col+w,line+h), cvScalar(128),
+                  1, 8,0 );
+	cvNamedWindow("ROIDisplay",1);
+	cvShowImage("ROIDisplay",TemplateCreation);
+	
+	cvZero(TemplateCreation);
+	cvAnd(GI.Lights.V_Filter,GI.Lights.S_Filter,GI.Lights.SandV_Filter);
+	
+	cvSetImageROI(GI.Lights.SandV_Filter,cvRect(col,line,w,h));
+	cvSetImageROI(TemplateCreation,cvRect(col,line,w,h));
+	
+	
+	cvCopy(GI.Lights.SandV_Filter,TemplateCreation);
+	
+	
+	
+ 	cvNamedWindow("Template",1);
+ 	cvShowImage("Template",TemplateCreation);
+	
+	cvResetImageROI(GI.Lights.SandV_Filter);
+	
+	
+	
+	char str1[255];
+	if (tem==0)
+	{
+		sprintf(str1,"RC");
+	}
+	else if(tem==1)
+	{
+		sprintf(str1,"YAL");
+	
+	
+	}
+	else if (tem==2)
+	{
+		sprintf(str1,"YAR");
+	}
+	else if (tem==3)
+	{
+		sprintf(str1,"GAU");	
+	}
+	cvPutText(LightsImg_Original , str1, cvPoint(100,100),&hugefont, CV_RGB(255,255,0));
+	
+	
+	char str3[255];
+	if (side==0)
+	{
+		sprintf(str3,"");
+	}
+	else if(side==1)
+	{
+		sprintf(str3,"_PS");
+	
+	
+	}
+	
+	char ch;
+	char str2[255];
+	
+	
+		
+	ch = cvWaitKey(40);
+	if (ch=='p')
+	{
+		sprintf(str2,"../imgtemplates/%s_Template%s.jpg",str1,str3);
+		
+		
+		cvSaveImage(str2, TemplateCreation);
+		cvPutText(LightsImg_Original , "saved", cvPoint(150,100),&hugefont, CV_RGB(255,255,0));
+	}
+	
+	cvResetImageROI(TemplateCreation);
+	//exit(0);
+
+
+					RL_MatchShapes();
+					Mode.Direction=TAKERIGHT;					
+
+	
+
+	
+	AF_DirectionControl_1(); //chooses one DA from all of them	
+	AF_ConvertDA(Table_DirToSend, Table_DirAngle);
+	AF_SpeedControl();
+	
+	
+	#if USESIGNALS
+		AF_LightsControl();
+	#endif
+	
+	#if USEPIC1COMS
+		if (RobotStatus.ChosenDA_PIC<55 && RobotStatus.ChosenDA_PIC<35 && RobotStatus.ChosenSpeed==NORMALSPEED)
+			RobotStatus.ChosenSpeed = NORMALSPEED;
+			SendDirAndSpeed(RobotStatus.ChosenDA_PIC,RobotStatus.ChosenSpeed,Handle.ComPort_0);
+	#endif
+	
+	#if USEPIC2COMS
+		RS_SendAllOrdersToPIC2(Handle.ComPort_1);
+		RS_ReadSensorsFromPIC2(Handle.ComPort_1);	
+	#endif
+	
+	
+	GF_DrawAll();
+	GF_WriteFlags();
+	#if USECONSTRUCTIONMODE
+		CN_DrawPins();
+	#endif
+	
+	if (Mode.Mode==NORMALMODE || Mode.Mode==CONSTRUCTIONMODE)
+	{
+		if (RobotStatus.ChosenDA >=MAXANGLETOENTERESCAPEMANOUVER  || RobotStatus.ChosenDA<=MINANGLETOENTERESCAPEMANOUVER)
+		{
+			AF_EscapeManouver();
+		}
+		else if(SquareRegion.ObstacleIsInnerSide)
+		{
+			if (RobotStatus.ChosenDA >=MAXANGLETOENTERESCAPEMANOUVER -10  || RobotStatus.ChosenDA<=MINANGLETOENTERESCAPEMANOUVER +10)
+				AF_EscapeManouver();
+		}
+		else 
+		{
+			RobotStatus.TimesInEscapeMode=0;	
+		}
+	}
+	
+	
+	AF_ApplyTunnelSensorFilter();
+	//TN_GetSideSensorsDistances();
+
+// 	if((RobotStatus.LapNumber>=TOTALLAPS) && (Mode.Mode==STOPMODE))
+// 	{
+// 	
+// 		SendDirAndSpeed(45,STOPPEDSPEED,Handle.ComPort_0);
+// 		#if POUT
+// 			printf("\n\nTOTALLAPSREACHED. EXITING\n\n");
+// 		#endif
+// 		
+// 		#if IPAINT
+// 			CvFont exitfont;
+// 			
+// 			cvInitFont( &exitfont, CV_FONT_HERSHEY_SIMPLEX, 2/*normal horizontal size*/,2/*normal vertical size*/,0/*non italic font*/,3/*thickness*/,4/*line type*/ );
+// 			cvPutText(RoadImg_rgb_hough, "FINAL LAP", cvPoint(0,100),&exitfont, CV_RGB(255,0,0));
+// 			cvPutText(RoadImg_rgb_hough, " EXITING  ", cvPoint(0,200),&exitfont, CV_RGB(255,0,0));
+// 			GF_ShowImages();
+// 			
+// 		#endif
+// 		cvWaitKey(5000);
+// 		exit(1);
+/*		
+	}*/
+	
+
+// 	cout << "RobotStatus.ChosenDA" <<  RobotStatus.ChosenDA << endl;
+// 	cout << "RobotStatus.LastDA[0]" <<  RobotStatus.LastDA[0] << endl;
+// 	cout << "RobotStatus.LastDA[1]" <<  RobotStatus.LastDA[1] << endl;
+// 	cout << "RobotStatus.LastDA[2]" <<  RobotStatus.LastDA[2] << endl;
+// 	cout << "RobotStatus.LastDA[3]" <<  RobotStatus.LastDA[3] << endl;
+// 	cout << "RobotStatus.LastDA[4]" <<  RobotStatus.LastDA[4] << endl;
+// 	cvWaitKey(0);
+		
+	TM_UpdateSince();
+	GF_ShowImages();
+	cvWaitKey(10);
+		
+	AF_ClearAllStruct();
+	
+}
+		
+}
+
+#endif

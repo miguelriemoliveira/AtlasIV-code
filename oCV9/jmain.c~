@@ -1,0 +1,510 @@
+/*!
+ * @file jmain.c Standalone application that uses the joinimg library and illustrates interactively how 2 images can be merged including distortion effects from perspective or camera lens.
+ *
+ */
+#define USECAMERAS 1
+ 
+#include "cv.h"
+#include "highgui.h"
+#include "joinimg.h"
+#include <stdio.h>
+
+#ifndef USECAMERAS
+#   define USECAMERAS 1
+#endif
+
+#if USECAMERAS  //From environment or compiler....
+#  include <mycameraclass_v1394.h> //caetano
+#endif
+
+#define LEFTCAMNODE 2
+#define RIGHTCAMNODE 1
+
+/*=======================================*/
+void SaveParameters(void);
+void LoadParameters(void);
+void GlobalDisplayRefresh(void);
+void overlapSlideBarCallBk(int pos);
+void thresholdSlideBarCallBk(int pos);
+void syncCbk(int pos);
+void ForceTrackbarsPositions(int bar);
+
+void fxSBcBk(int pos);
+void cxSBcBk(int pos);
+void fySBcBk(int pos);
+void cySBcBk(int pos);
+void k1SBcBk(int pos);
+void k2SBcBk(int pos);
+void k3SBcBk(int pos);
+void k4SBcBk(int pos);
+
+void fxSBcBkL(int pos);
+void fySBcBkL(int pos);
+void cxSBcBkL(int pos);
+void cySBcBkL(int pos);
+void k1SBcBkL(int pos);
+void k2SBcBkL(int pos);
+void k3SBcBkL(int pos);
+void k4SBcBkL(int pos);
+/*=======================================*/
+
+static const int NN = 8;
+struct vsStatus { IplImage *imL, *imR, *imJ; char *winNameL, *winNameR, *winNameJ; int overlapH, bin;
+		  void (*binOper)(const CvArr*, const CvArr*, CvArr*, const CvArr*);
+                  int distDataR[NN]; /*fx, fy, cx, cy, k1, k2, k3, k4;*/
+                  int distDataL[NN]; /*fx, fy, cx, cy, k1, k2, k3, k4;*/
+		  int msgOn;
+		  int spMsgOn; 
+		  int synchParams; 
+		  int colorMask;
+		  CvMat *mapxL, *mapyL, *mapxR, *mapyR;  /*To store distortion maps*/
+
+                 } sG;
+
+struct tBarRightGStruct { char *name; void (*cbk)(int) ; }
+  	            tBarRightG[NN]= {
+  	                        { "fx", fxSBcBk },
+  	                        { "fy", fySBcBk },
+			        { "cx", cxSBcBk },
+  	                        { "cy", cySBcBk },
+  	                        { "k1", k1SBcBk },
+  	                        { "k2", k2SBcBk },
+  	                        { "k3", k3SBcBk },
+  	                        { "k4", k4SBcBk }
+		               },
+  	            tBarLeftG[NN]= {
+  	                        { "fx", fxSBcBkL },
+  	                        { "fy", fySBcBkL },
+			        { "cx", cxSBcBkL },
+  	                        { "cy", cySBcBkL },
+  	                        { "k1", k1SBcBkL },
+  	                        { "k2", k2SBcBkL },
+  	                        { "k3", k3SBcBkL },
+  	                        { "k4", k4SBcBkL }
+		               };
+
+#define RIGHTPANNEL 0
+#define LEFTPANNEL 1
+int lastPannelActuatedG=RIGHTPANNEL; // just a default, which is irrelevant
+int allCreatedG = 0;  //just to avoid some forced refresehes before all windows created!
+static char *versionG="V9";
+
+/*==================================================*/
+//#define IMLEFT  "IM2-left.jpg"
+//#define IMRIGHT "IM2-right.jpg"
+
+//#define IMLEFT  "Left1sempinos-0000000000.jpg"
+//#define IMRIGHT "Right1sempinos-0000000000.jpg"
+
+#define IMLEFT  "Left1compinos-0000000000.jpg"
+#define IMRIGHT "Right1compinos-0000000000.jpg"
+/*=======================================*/
+
+/*!
+ * @brief main is main of course. Nothing special...
+ * @brief Oh! It is forced to use global variables due to poor openCV GUI functions :-(((
+ * @brief accepts options a or h in alternative. 'a' forces the display of all images.
+ * @brief 'h' gives the help message!
+ */
+int main( int argc, char** argv )
+{
+    int n;
+    int prevDistDataLeft[NN]={50,50,50,50,50,50,50,50};
+    int prevDistDataRight[NN]={50,50,50,50,50,50,50,50};
+    int aux=0;
+    int showOrgImages = 0;  //do not display original images
+
+    if(argc > 1 && argv[1][0]=='a') showOrgImages = 1; 
+    if(argc > 1 && argv[1][0]=='h') 
+    {
+	    printf("Syntax: jmain [o|h]. 'a' shows all 5 images\n");
+	    printf("Version %s: V. Santos, %s %s\n", versionG, __DATE__, __TIME__);
+	    exit(0);
+    }
+    
+    IplImage* imgLeft=NULL;
+    IplImage* imgRight=NULL; 
+    
+#   if USECAMERAS
+    	//init images that otherwise are initialized by cvLoadimg
+    	imgLeft= cvCreateImage(cvSize(320,240),IPL_DEPTH_8U , 3);
+	imgRight= cvCreateImage(cvSize(320,240),IPL_DEPTH_8U , 3);
+	//init cameras
+	mycameraclass_v1394 *LeftCamHandle;
+	mycameraclass_v1394 *RightCamHandle;
+	
+	LeftCamHandle = new mycameraclass_v1394(LEFTCAMNODE );
+	RightCamHandle= new mycameraclass_v1394(RIGHTCAMNODE );
+	
+	
+	//Cameras aquisition
+	*imgLeft = LeftCamHandle->myGetImageColor(); //aquire image form cam0
+	
+
+	cvConvertImage(imgLeft ,imgLeft ,CV_CVTIMG_SWAP_RB); //convert from BGR to RGB
+ 	*imgRight = RightCamHandle->myGetImageColor(); //aquire image form cam1
+	cvConvertImage(imgRight,imgRight,CV_CVTIMG_SWAP_RB); //convert from BGR to RGB
+	
+#   else
+    	imgLeft = cvLoadImage( IMLEFT, 1 ); //Load image and force grayscale (use 1 not to force)
+	imgRight = cvLoadImage( IMRIGHT, 1 ); //Load image and force grayscale (use 1 not to force)
+#   endif
+    
+    IplImage* imgj= cvCreateImage( cvSize(2*imgLeft->width,imgLeft->height), imgLeft->depth, imgLeft->nChannels );
+
+    IplImage* imgLeftU =cvCreateImage( cvSize(imgLeft->width,imgLeft->height), imgLeft->depth, imgLeft->nChannels);
+    IplImage* imgRightU=cvCreateImage( cvSize(imgLeft->width,imgLeft->height), imgLeft->depth, imgLeft->nChannels);
+
+
+    //Fill global structure for the callback to update :-(
+    sG.imL = imgLeftU;
+    sG.imR = imgRightU;
+    sG.imJ = imgj;
+    sG.winNameL="LeftImageUndistorted";
+    sG.winNameR="RightImageUndistorted";
+    sG.winNameJ="MergeImage";
+    sG.overlapH = 0; //default is not being joint...
+    sG.bin = 0; //no thresholding
+    sG.colorMask = SHOWCOLORALL; //By default show all pure colors resulting from thresholding....
+    sG.binOper = cvOr; //Binary openCV OR
+    sG.msgOn = 1; //By default show messages on window
+    sG.spMsgOn = 0; //By default does not show a special message on window
+    sG.synchParams = 0; //By default does not synch Camara Params
+    sG.mapxL=NULL;
+    sG.mapyL=NULL;
+    sG.mapxR=NULL;
+    sG.mapyR=NULL;
+
+    for(n=0;n<NN; n++) sG.distDataR[n]=50 ; /*fx, fy, cx, cy, k1, k2, k3, k4;*/
+    for(n=0;n<NN; n++) sG.distDataL[n]=50 ; /*fx, fy, cx, cy, k1, k2, k3, k4;*/
+    
+    
+    UndistortImage(imgRight, NULL,      sG.distDataR, & sG.mapxR, & sG.mapyR ) ;  //initialize maps
+    UndistortImage(imgRight, imgRightU, sG.distDataR, & sG.mapxR, & sG.mapyR ) ;  //apply maps
+
+    UndistortImage(imgLeft, NULL,      sG.distDataL, & sG.mapxL, & sG.mapyL ) ;  //initialize maps
+    UndistortImage(imgLeft, imgLeftU,  sG.distDataL, & sG.mapxL, & sG.mapyL ) ;  //apply maps
+
+    if(! joinImages( imgLeftU, imgRightU, imgj, -sG.overlapH, sG.bin | sG.colorMask, sG.binOper )) //-sG.overlapH made negative to center fused image
+    {
+	    printf("Could not join images. Aborting\n");
+	    exit(0); 
+    } 
+
+    //Now some graphics on screen for windows and trackbars for manual adjustment
+    cvNamedWindow( "LeftImage", CV_WINDOW_AUTOSIZE );
+    cvMoveWindow( "LeftImage", 220, 10 );
+    if( showOrgImages) cvShowImage( "LeftImage", imgLeft );
+
+    cvNamedWindow( "RightImage", CV_WINDOW_AUTOSIZE );
+    cvMoveWindow( "RightImage", 220+imgLeft->width+10, 10 );
+    if( showOrgImages) cvShowImage( "RightImage", imgRight );
+		////Undist...
+    cvNamedWindow( sG.winNameL, CV_WINDOW_AUTOSIZE );
+    cvMoveWindow( sG.winNameL, 220, 10+(imgLeft->height+36)*showOrgImages );
+    cvShowImage( sG.winNameL, imgLeftU );
+
+    cvNamedWindow( sG.winNameR, CV_WINDOW_AUTOSIZE );
+    cvMoveWindow( sG.winNameR, 220+imgLeft->width+10, 10+(imgLeft->height+36)*showOrgImages );
+    cvShowImage( sG.winNameR, imgRightU );
+    		///// Fused image
+
+    cvNamedWindow( sG.winNameJ, CV_WINDOW_AUTOSIZE );
+    cvMoveWindow( sG.winNameJ, 220+7,10+imgLeft->height+36+(imgLeft->height+36)*showOrgImages );
+    cvShowImage( sG.winNameJ, imgj );
+
+    /// Create two windows just for Camera param trackbars and create and display the track bars.... :-)
+    cvNamedWindow( "ParamsRight", CV_WINDOW_AUTOSIZE );
+    cvMoveWindow(  "ParamsRight", 220+2*(10+imgLeft->width),10 );
+    cvNamedWindow( "ParamsLeft" , CV_WINDOW_AUTOSIZE );
+    cvMoveWindow(  "ParamsLeft" , 10 ,10 );
+    /// Create another windows for some bynary confs
+    cvNamedWindow( "Synchs", CV_WINDOW_AUTOSIZE );
+    cvMoveWindow(  "Synchs", 10 ,10+490 );
+
+    for(n = 0; n< NN ; n++)
+    {
+    	cvCreateTrackbar( tBarRightG[n].name, "ParamsRight", &sG.distDataR[n], 100, tBarRightG[n].cbk );
+	tBarRightG[n].cbk(50);
+
+    	cvCreateTrackbar( tBarLeftG[n].name, "ParamsLeft", &sG.distDataL[n], 100, tBarLeftG[n].cbk );
+	tBarRightG[n].cbk(50);
+    }
+    cvResizeWindow( "ParamsRight", 200,450 );
+    cvResizeWindow( "ParamsLeft", 200,450 );
+
+    //Create the initial trackbars
+    cvCreateTrackbar( "Overlap", sG.winNameJ , &sG.overlapH, sG.imL->width, overlapSlideBarCallBk );
+    cvCreateTrackbar( "Threshold", sG.winNameJ , &sG.bin, 255, thresholdSlideBarCallBk );
+    overlapSlideBarCallBk(0);  //First call to create the overlapped image
+    thresholdSlideBarCallBk(0);  //First call to create the overlapped image
+
+    cvCreateTrackbar( "synchParams", "Synchs" , &sG.synchParams, 1, syncCbk );
+    syncCbk(0);
+    cvResizeWindow( "Synchs", 200,50 );
+
+    //Wait until any key is pressed and process its codes
+    //Only Enter quits the applications....
+    int keepGoing=1;
+    int kCode;
+
+    allCreatedG = 1;
+    while(keepGoing)
+    {
+	
+#       if USECAMERAS
+    	kCode=cvWaitKey(10);  //wait 10 ms if using cameras or 0 if no cameras
+	//Cameras aquisition
+	*imgLeft = LeftCamHandle->myGetImageColor(); //aquire image form cam0
+	cvConvertImage(imgLeft ,imgLeft ,CV_CVTIMG_SWAP_RB); //convert from BGR to RGB
+	sG.imL = imgLeft;
+ 	*imgRight = RightCamHandle->myGetImageColor(); //aquire image form cam1
+	cvConvertImage(imgRight,imgRight,CV_CVTIMG_SWAP_RB); //convert from BGR to RGB
+	sG.imR = imgRight;
+#       else
+    	kCode=cvWaitKey(0);  //endless loop
+#	endif
+	
+	switch((char)kCode)
+	{
+	    case 'a':  //Set AND operator
+		sG.binOper = cvAnd;
+		break;
+	    case 'o':  //Set OR operator
+		sG.binOper = cvOr;
+		break;
+	    case 's':  //impose 'sum' on non binary by setting operator NULL
+		sG.binOper = NULL;
+		break;
+	    case 'n':  //Toggle "normal" and previous camara parameters
+    		aux=0;
+		for(n=0;n < NN; n++) aux += sG.distDataR[n];
+		if(aux != NN*50) 
+			for(n=0;n < NN; n++) 
+			{
+				prevDistDataRight[n] = sG.distDataR[n];
+				prevDistDataLeft[n] = sG.distDataL[n];
+				cvSetTrackbarPos(tBarRightG[n].name,"ParamsRight" , 50 );	
+				cvSetTrackbarPos(tBarLeftG[n].name,"ParamsLeft" , 50 );	
+			}
+		else
+			for(n=0;n < NN; n++) 
+			{
+				cvSetTrackbarPos(tBarRightG[n].name,"ParamsRight" , prevDistDataRight[n] );	
+				cvSetTrackbarPos(tBarLeftG[n].name,"ParamsLeft" , prevDistDataLeft[n] );	
+			}
+		break;
+	    case 'd':  // Toggle display of messages 
+		sG.msgOn = 1-sG.msgOn;
+		break;
+	    case 'p':  // Save camera parameters
+		SaveParameters();
+		break;
+	    case 'l':  // Load camera parameters
+		LoadParameters();
+		ForceTrackbarsPositions(-1); //Force all
+		break;
+	    case 'v':  // show version
+		sG.spMsgOn = 1;
+		break;
+
+//Several cases for pure color component display
+	    case 'w': sG.colorMask = SHOWCOLORWHITE;   break;
+	    case 'r': sG.colorMask = SHOWCOLORRED;     break;
+	    case 'g': sG.colorMask = SHOWCOLORGREEN;   break;
+	    case 'm': sG.colorMask = SHOWCOLORMAGENTA; break;
+	    case 'y': sG.colorMask = SHOWCOLORYELLOW;  break;
+	    case 'b': sG.colorMask = SHOWCOLORBLUE;    break;
+	    case 'c': sG.colorMask = SHOWCOLORCYAN;    break;
+	    case '0': sG.colorMask = SHOWCOLORALL;     break;
+//End of pure color cases
+//
+	    case '\n':
+		keepGoing = 0;
+		break;
+	    //default: if(kCode != -2) keepGoing = 0;
+	}
+	GlobalDisplayRefresh();
+
+	//If changing images by some reason like framegrabing,
+	//that could be done here and then force the GlobalDisplayRefresh
+    }
+
+    //Now we are leaving...
+    cvReleaseImage( & imgLeft );  
+    cvReleaseImage( & imgRight );  
+    cvReleaseImage( & imgj );  
+    cvReleaseImage( & imgLeftU );  
+    cvReleaseImage( & imgRightU );  
+
+    return 0;
+
+}
+
+
+/*!
+ * @brief Forces bars positions and allows syncronazation of left and right bars.
+ * @brief Uses global variables :-( Not recommended
+ * @param bar: if -1 forces allbars at onece. Other vales force only that bar...
+ */
+void ForceTrackbarsPositions(int bar)
+{
+	int n, inf, sup;
+	if( ! allCreatedG) return;  //To early to force refreshes...
+
+	if( bar < 0) { inf=0; sup=NN;}
+	else if(bar < NN) {inf=bar; sup=bar+1;}
+	else return; //Unacceptable value
+
+	for(n=inf;n < sup; n++) 
+	{
+		if(sG.synchParams) 
+		    switch(lastPannelActuatedG)
+			{
+			    case RIGHTPANNEL:
+				sG.distDataL[n] = sG.distDataR[n];
+			    	break;
+			    case LEFTPANNEL:
+				sG.distDataR[n] = sG.distDataL[n] ;
+			    	break;
+			}
+
+		cvSetTrackbarPos(tBarRightG[n].name,"ParamsRight" , sG.distDataR[n] );	
+		cvSetTrackbarPos(tBarLeftG[n].name,"ParamsLeft" ,   sG.distDataL[n] );	
+	}
+
+	cvSetTrackbarPos("Overlap",  sG.winNameJ , sG.overlapH );	
+	cvSetTrackbarPos("Threshold",sG.winNameJ , sG.bin );	
+}
+
+/*!
+ * @brief Saves Camera distortion parameters to a fixed name file
+ * @brief Uses global variables :-( Not recommended
+ */
+void SaveParameters(void)
+{
+	FILE *fp = fopen("camParams.cfg", "w");
+	int n;
+	fprintf(fp, "#camParams.cfg - camara parameters configuration filea\n");
+	fprintf(fp, "#vales represent a percentual value where 50 indicates the default values\n");
+	fprintf(fp, "#Limits: 100 indicates a value 6x the default; 0 indicates value -4x the default\n");
+	fprintf(fp, "#First 8 parameters for right Camera and following 8 parameters for left Camera\n");
+	fprintf(fp, "# V. Santos, Mar 2006\n");
+
+	for(n=0; n < NN; n++)
+		fprintf(fp, "%sR	%d\n", tBarRightG[n].name,sG.distDataR[n]);
+	for(n=0; n < NN; n++)
+		fprintf(fp, "%sL	%d\n", tBarLeftG[n].name,sG.distDataL[n]);
+
+	fprintf(fp, "overH	%d\n", sG.overlapH);
+	fprintf(fp, "bin	%d\n", sG.bin);
+	fclose(fp);
+}
+
+/*!
+ * @brief Loads Camera distortion parameters from a fixed file
+ * @brief Uses global variables :-( Not recommended
+ */
+void LoadParameters(void)
+{
+	FILE *fp = fopen("camParams.cfg", "r");
+	int n;
+	static char str[128];
+	if( !fp) return;
+
+	for(n=0; n < 5; n++) fgets(str, 127, fp); //Read comment lines
+
+	for(n=0; n < NN; n++)
+		fscanf(fp, "%s	%d\n", str, &sG.distDataR[n]);
+	for(n=0; n < NN; n++)
+		fscanf(fp, "%s	%d\n", str, &sG.distDataL[n]);
+
+	fscanf(fp, "%s	%d\n", str, &sG.overlapH);
+	fscanf(fp, "%s	%d\n", str, &sG.bin);
+
+	fclose(fp);
+
+}
+/*!
+ * @brief Auxiliary function which does the actual job of trackbars and uses global data :-( modified elsewhere
+ * @brief Uses global variables :-( Not recommended
+ */
+void GlobalDisplayRefresh(void)
+{
+    const static int STARTY = 168;
+    static char str[100];
+    CvFont font1;
+    IplImage *tImg;
+    static IplImage* imgLeftU =cvCreateImage(cvSize(sG.imL->width,sG.imL->height),sG.imL->depth, sG.imL->nChannels);
+    static IplImage* imgRightU=cvCreateImage(cvSize(sG.imL->width,sG.imL->height),sG.imL->depth, sG.imL->nChannels);
+
+    
+    UndistortImage(sG.imL, NULL, sG.distDataL, & sG.mapxL, & sG.mapyL);  //To recompute maps since params may have changes
+    UndistortImage(sG.imL, imgLeftU, sG.distDataL, & sG.mapxL, & sG.mapyL); // to apply the maps
+    cvShowImage( sG.winNameL, imgLeftU );  //Refresh left distorted image on screen
+
+    UndistortImage(sG.imR, NULL, sG.distDataR, & sG.mapxR, & sG.mapyR);//To recompute maps since params may have changes
+    UndistortImage(sG.imR, imgRightU, sG.distDataR, & sG.mapxR, & sG.mapyR); // to apply the maps
+    cvShowImage( sG.winNameR, imgRightU );  //Refresh right distorted image on screen
+
+    joinImages( imgLeftU, imgRightU, sG.imJ, -sG.overlapH, sG.bin| sG.colorMask, sG.binOper ); //-sG.overlapH made negative to center fused image
+    //Print out some text in window before showing it...
+    if( sG.spMsgOn) sG.msgOn = 1;
+
+    if(sG.msgOn)
+    {
+#define TXTCOL	cvScalar(180)
+        tImg = cvCreateImage(cvSize(sG.imJ->width,sG.imJ->height),sG.imJ->depth, sG.imJ->nChannels);
+        cvZero( tImg);
+        cvInitFont( &font1 , CV_FONT_HERSHEY_PLAIN, 1.0f, 1.0f);
+        cvPutText(tImg,"On RGB images use 'r,g,b,y,m,c,w' to view pure colors or '0' to see all", cvPoint(4,STARTY-14), &font1, TXTCOL );
+        cvPutText(tImg,"Type 'a', 'o' or 's' to change binary operator!", cvPoint(4,STARTY), &font1, TXTCOL );
+        cvPutText(tImg,"Type 'p' to saves camera parameterss", cvPoint(4,STARTY+12), &font1, TXTCOL );
+        cvPutText(tImg,"Type 'n' to toggle normal and previous camera parameters", cvPoint(4,STARTY+2*12), &font1, TXTCOL );
+        cvPutText(tImg,"Type 'l' to load most recently saved camera parameters", cvPoint(4,STARTY+3*12), &font1, TXTCOL );
+        cvPutText(tImg,"Type 'd' to toggle the display of these messages", cvPoint(4,STARTY+4*12), &font1, TXTCOL );
+        cvPutText(tImg,"Type 'v' to display application version", cvPoint(4,STARTY+5*12), &font1, TXTCOL );
+
+        if( sG.spMsgOn )
+        {
+    	    sprintf(str, "JoinImages application and library");
+    	    cvPutText(tImg,str, cvPoint(10,100), &font1, TXTCOL );
+    	    sprintf(str, "%s compiled on %s %s. V. Santos",versionG, __DATE__, __TIME__ );
+    	    cvPutText(tImg,str, cvPoint(10,120), &font1, TXTCOL );
+    	    sG.spMsgOn=0;
+        }
+        cvXor(sG.imJ, tImg, sG.imJ);  //Mix image and captions...
+        cvReleaseImage( &tImg);
+#undef TXTCOL
+    }
+    //////////////////////////////////////
+    cvShowImage( sG.winNameJ, sG.imJ );  //Refresh joint image on screen
+}
+
+//The entire set of (dummy) callbacks
+//I call them dummy because they affect inplicitely one parameter each
+//and at most they can be called with an argument that implicitely
+//sets the cursor and adjsuts the associated variable
+//Unfortunetaly that do not accept other parameters and therefore
+//for the use of addditional functions that must access global variables :-((((
+void overlapSlideBarCallBk(int pos)   { GlobalDisplayRefresh(); }
+void thresholdSlideBarCallBk(int pos) { GlobalDisplayRefresh(); }
+void fxSBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(0); GlobalDisplayRefresh(); }
+void fySBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(1); GlobalDisplayRefresh(); }
+void cxSBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(2); GlobalDisplayRefresh(); }
+void cySBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(3); GlobalDisplayRefresh(); }
+void k1SBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(4); GlobalDisplayRefresh(); }
+void k2SBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(5); GlobalDisplayRefresh(); }
+void k3SBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(6); GlobalDisplayRefresh(); }
+void k4SBcBk(int pos)                 { lastPannelActuatedG=RIGHTPANNEL; ForceTrackbarsPositions(7); GlobalDisplayRefresh(); }
+
+void fxSBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(0); GlobalDisplayRefresh(); }
+void fySBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(1); GlobalDisplayRefresh(); }
+void cxSBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(2); GlobalDisplayRefresh(); }
+void cySBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(3); GlobalDisplayRefresh(); }
+void k1SBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(4); GlobalDisplayRefresh(); }
+void k2SBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(5); GlobalDisplayRefresh(); }
+void k3SBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(6); GlobalDisplayRefresh(); }
+void k4SBcBkL(int pos)                 { lastPannelActuatedG=LEFTPANNEL; ForceTrackbarsPositions(7); GlobalDisplayRefresh(); }
+
+void syncCbk(int pos)                 { GlobalDisplayRefresh(); }
